@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OT Ethics Investigation – Puzzle 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0d1b2a;
+    --dark: #111820;
+    --panel: #162030;
+    --border: #1e3a50;
+    --accent: #c8a84b;
+    --accent2: #e05c3a;
+    --green: #2dbe8f;
+    --red: #e05c3a;
+    --text: #cdd9e5;
+    --muted: #6b8299;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  header {
+    background: var(--navy);
+    border-bottom: 2px solid var(--accent);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .badge {
+    background: var(--accent);
+    color: var(--dark);
+    font-family: 'Bebas Neue', cursive;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 2px;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--accent);
+  }
+
+  header span {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+    letter-spacing: 1px;
+  }
+
+  .intro-bar {
+    background: rgba(200,168,75,0.07);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 32px;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .intro-bar::before { content: '▶'; font-size: 9px; }
+
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+  }
+
+  .puzzle-header {
+    margin-bottom: 28px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  .puzzle-header h2 {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 32px;
+    letter-spacing: 4px;
+    color: #fff;
+  }
+
+  .puzzle-header p {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    margin-bottom: 28px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 2px;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  .col-header {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .col-header .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* Case Cards */
+  .case-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border-radius: 3px;
+    cursor: grab;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    transition: all 0.15s ease;
+    position: relative;
+    user-select: none;
+  }
+
+  .case-card:active { cursor: grabbing; }
+
+  .case-card:hover {
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+    background: #1a2a3c;
+    transform: translateX(3px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .case-card.dragging {
+    opacity: 0.4;
+    transform: scale(0.97);
+  }
+
+  .case-num {
+    font-size: 9px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  /* Drop Zones */
+  .drop-zone {
+    background: var(--panel);
+    border: 1.5px dashed var(--border);
+    border-radius: 3px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    min-height: 68px;
+    transition: all 0.15s ease;
+    position: relative;
+  }
+
+  .principle-label {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .principle-label .tag {
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 2px 7px;
+    background: rgba(200,168,75,0.1);
+    border: 1px solid rgba(200,168,75,0.25);
+    color: var(--accent);
+    border-radius: 2px;
+  }
+
+  .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(200,168,75,0.05);
+  }
+
+  .drop-zone.correct {
+    border-color: var(--green);
+    border-style: solid;
+    background: rgba(45,190,143,0.05);
+  }
+
+  .drop-zone.wrong {
+    border-color: var(--red);
+    border-style: solid;
+    animation: shake 0.4s ease;
+  }
+
+  .dropped-card {
+    font-size: 11px;
+    color: #a0b8cc;
+    line-height: 1.5;
+    padding-top: 4px;
+  }
+
+  .check-icon {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    font-size: 16px;
+    display: none;
+  }
+
+  .drop-zone.correct .check-icon { display: block; color: var(--green); }
+  .drop-zone.wrong .check-icon { display: block; color: var(--red); }
+
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    40%{transform:translateX(6px)}
+    60%{transform:translateX(-4px)}
+    80%{transform:translateX(4px)}
+  }
+
+  /* Submit Button */
+  .submit-area {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 10px;
+  }
+
+  .btn-submit {
+    background: var(--accent);
+    color: var(--dark);
+    border: none;
+    padding: 13px 32px;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 18px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-submit:hover {
+    background: #e0be6a;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(200,168,75,0.3);
+  }
+
+  .btn-reset {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 12px 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .btn-reset:hover {
+    border-color: var(--muted);
+    color: var(--text);
+  }
+
+  /* Score panel */
+  .score-panel {
+    display: none;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px 32px;
+    margin-top: 24px;
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .score-panel.show { display: block; }
+
+  .score-panel.perfect {
+    border-color: var(--green);
+    background: rgba(45,190,143,0.04);
+  }
+
+  .result-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 42px;
+    letter-spacing: 5px;
+    margin-bottom: 10px;
+  }
+
+  .score-panel.perfect .result-title { color: var(--green); }
+  .score-panel:not(.perfect) .result-title { color: var(--accent); }
+
+  .result-sub {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  .final-code {
+    display: inline-block;
+    background: var(--dark);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Bebas Neue', cursive;
+    font-size: 32px;
+    letter-spacing: 8px;
+    padding: 12px 32px;
+    margin: 14px 0;
+    border-radius: 3px;
+  }
+
+  .score-tally {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  .score-tally strong { color: var(--accent); }
+
+  .hint-text {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 16px;
+    font-style: italic;
+  }
+
+  /* Instructions tooltip */
+  .instructions {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    padding: 12px 18px;
+    font-size: 11px;
+    color: var(--muted);
+    border-radius: 3px;
+    margin-bottom: 24px;
+    line-height: 1.7;
+  }
+
+  .instructions strong { color: var(--accent); }
+
+  /* Login Screen */
+  #loginScreen {
+    position: fixed;
+    inset: 0;
+    background: var(--dark);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .login-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    padding: 44px 52px;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 440px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    animation: fadeIn 0.5s ease;
+  }
+
+  .login-logo {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .login-logo::before, .login-logo::after {
+    content: '';
+    height: 1px;
+    width: 40px;
+    background: var(--accent);
+    opacity: 0.4;
+  }
+
+  .login-box h2 {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .login-box p {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+
+  .login-input-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .login-input-wrap::before {
+    content: '▶';
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 9px;
+    color: var(--accent);
+  }
+
+  #codeInput {
+    width: 100%;
+    background: var(--dark);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--accent);
+    font-family: 'Bebas Neue', cursive;
+    font-size: 22px;
+    letter-spacing: 6px;
+    padding: 13px 16px 13px 34px;
+    outline: none;
+    text-transform: uppercase;
+    transition: border-color 0.2s;
+  }
+
+  #codeInput:focus { border-color: var(--accent); }
+  #codeInput::placeholder { color: var(--border); font-size: 16px; letter-spacing: 3px; }
+
+  .btn-login {
+    width: 100%;
+    background: var(--accent);
+    color: var(--dark);
+    border: none;
+    padding: 13px;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 18px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .btn-login:hover {
+    background: #e0be6a;
+    box-shadow: 0 6px 20px rgba(200,168,75,0.3);
+  }
+
+  #loginError {
+    color: var(--red);
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-top: 12px;
+    min-height: 16px;
+    animation: shake 0.4s ease;
+  }
+
+  .login-footer {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 24px;
+    letter-spacing: 1px;
+    opacity: 0.6;
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .board { grid-template-columns: 1fr; }
+    header h1 { font-size: 16px; }
+    .login-box { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">STATE OT LICENSURE BOARD</div>
+    <h2>Secure Access Required</h2>
+    <p>Enter the supervision audit code to access<br>the Ethics Investigation Portal.</p>
+    <div class="login-input-wrap">
+      <input id="codeInput" type="text" placeholder="ENTER CODE" autocomplete="off" maxlength="10">
+    </div>
+    <button class="btn-login" onclick="checkCode()">Access Portal</button>
+    <div id="loginError"></div>
+    <div class="login-footer">PUZZLE 3 — ETHICAL VIOLATION IDENTIFICATION</div>
+  </div>
+</div>
+
+<header>
+  <div class="badge">CONFIDENTIAL</div>
+  <h1>OT Licensure Board – Ethics Investigation</h1>
+  <span>PUZZLE 3 / CASE FILE 03</span>
+</header>
+
+<div class="intro-bar">
+  Reports of professional misconduct have been submitted. Identify which AOTA Code of Ethics principle each case violates.
+</div>
+
+<div class="main">
+
+  <div class="puzzle-header">
+    <h2>Ethical Violation Identification</h2>
+    <p>DRAG EACH CASE TO THE PRINCIPLE IT VIOLATES</p>
+  </div>
+
+  <div class="instructions">
+    <strong>Instructions:</strong> Drag each <strong>Case File</strong> from the left column and drop it onto the matching <strong>Ethical Principle</strong> on the right. When all 6 cases are placed, click <strong>Submit Matches</strong> to check your answers. Correct matches will be revealed in green. A final unlock code is awarded for a perfect score.
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div class="board">
+
+    <!-- LEFT: Case Cards -->
+    <div>
+      <div class="col-header"><span class="dot"></span>CASE FILES</div>
+
+      <div id="cases">
+        <div class="case-card" draggable="true" id="c1">
+          <div class="case-num">CASE 01</div>
+          An OTA begins implementing a new intervention technique they learned on YouTube without informing or consulting the supervising OT.
+        </div>
+        <div class="case-card" draggable="true" id="c2">
+          <div class="case-num">CASE 02</div>
+          An OT documents that a client completed 45 minutes of therapy when the session lasted only 30 minutes to help the department meet productivity.
+        </div>
+        <div class="case-card" draggable="true" id="c3">
+          <div class="case-num">CASE 03</div>
+          An OT refuses to modify a treatment plan despite the client expressing discomfort and requesting alternatives.
+        </div>
+        <div class="case-card" draggable="true" id="c4">
+          <div class="case-num">CASE 04</div>
+          An OT publicly criticizes an OTA's clinical reasoning in front of a client and family.
+        </div>
+        <div class="case-card" draggable="true" id="c5">
+          <div class="case-num">CASE 05</div>
+          An OT notices a client showing signs of depression for three weeks — withdrawing from therapy, expressing hopelessness — and continues the original treatment plan without addressing the mental health concerns or making a referral.
+        </div>
+        <div class="case-card" draggable="true" id="c6">
+          <div class="case-num">CASE 06</div>
+          An OT provides thorough, lengthy sessions to clients with private insurance but consistently cuts sessions short for Medicaid clients, without any clinical justification.
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Drop Zones -->
+    <div>
+      <div class="col-header"><span class="dot"></span>ETHICAL PRINCIPLES</div>
+
+      <div class="drop-zone" data-answer="c5" id="zone-beneficence">
+        <div class="principle-label">Beneficence <span class="tag">DO GOOD</span></div>
+        <div class="dropped-card" id="drop-beneficence">Drop case here…</div>
+        <span class="check-icon" id="icon-beneficence"></span>
+      </div>
+
+      <div class="drop-zone" data-answer="c1" id="zone-nonmaleficence">
+        <div class="principle-label">Nonmaleficence <span class="tag">DO NO HARM</span></div>
+        <div class="dropped-card" id="drop-nonmaleficence">Drop case here…</div>
+        <span class="check-icon" id="icon-nonmaleficence"></span>
+      </div>
+
+      <div class="drop-zone" data-answer="c3" id="zone-autonomy">
+        <div class="principle-label">Autonomy <span class="tag">SELF-DETERMINATION</span></div>
+        <div class="dropped-card" id="drop-autonomy">Drop case here…</div>
+        <span class="check-icon" id="icon-autonomy"></span>
+      </div>
+
+      <div class="drop-zone" data-answer="c6" id="zone-justice">
+        <div class="principle-label">Justice <span class="tag">FAIRNESS</span></div>
+        <div class="dropped-card" id="drop-justice">Drop case here…</div>
+        <span class="check-icon" id="icon-justice"></span>
+      </div>
+
+      <div class="drop-zone" data-answer="c4" id="zone-fidelity">
+        <div class="principle-label">Fidelity <span class="tag">LOYALTY & RESPECT</span></div>
+        <div class="dropped-card" id="drop-fidelity">Drop case here…</div>
+        <span class="check-icon" id="icon-fidelity"></span>
+      </div>
+
+      <div class="drop-zone" data-answer="c2" id="zone-veracity">
+        <div class="principle-label">Veracity <span class="tag">HONESTY</span></div>
+        <div class="dropped-card" id="drop-veracity">Drop case here…</div>
+        <span class="check-icon" id="icon-veracity"></span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="submit-area">
+    <button class="btn-submit" onclick="checkAnswers()">Submit Matches</button>
+    <button class="btn-reset" onclick="resetGame()">↺ Reset Board</button>
+  </div>
+
+  <div class="score-panel" id="scorePanel">
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <div id="codeReveal"></div>
+    <div class="score-tally" id="scoreTally"></div>
+    <div class="hint-text" id="hintText"></div>
+  </div>
+
+</div>
+
+<script>
+  // Login gate
+  function checkCode() {
+    const val = document.getElementById('codeInput').value.trim().toUpperCase();
+    if (val === 'AUDIT') {
+      const screen = document.getElementById('loginScreen');
+      screen.style.opacity = '0';
+      screen.style.transition = 'opacity 0.4s ease';
+      setTimeout(() => screen.style.display = 'none', 400);
+    } else {
+      const err = document.getElementById('loginError');
+      err.textContent = 'Incorrect code. Access denied.';
+      document.getElementById('codeInput').style.borderColor = 'var(--red)';
+      setTimeout(() => {
+        err.textContent = '';
+        document.getElementById('codeInput').style.borderColor = 'var(--border)';
+      }, 2500);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('codeInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkCode();
+    });
+  });
+
+  // Map: zone name → which card ID is the correct answer
+  const zoneNames = ['beneficence','nonmaleficence','autonomy','justice','fidelity','veracity'];
+  const droppedMap = {}; // zoneName → cardId
+  let dragged = null;
+
+  // Original card HTML (for reset)
+  const originalCards = {};
+  document.querySelectorAll('.case-card').forEach(card => {
+    originalCards[card.id] = card.outerHTML;
+  });
+
+  // Drag events on cards
+  function bindCards() {
+    document.querySelectorAll('.case-card').forEach(card => {
+      card.addEventListener('dragstart', e => {
+        dragged = card;
+        setTimeout(() => card.classList.add('dragging'), 0);
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+      });
+    });
+  }
+  bindCards();
+
+  // Drop zone events
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('drag-over');
+    });
+
+    zone.addEventListener('dragleave', () => {
+      zone.classList.remove('drag-over');
+    });
+
+    zone.addEventListener('drop', () => {
+      zone.classList.remove('drag-over');
+      if (!dragged) return;
+
+      const zoneName = zone.id.replace('zone-', '');
+
+      // If zone already has a card, return the old card to the case list
+      if (droppedMap[zoneName]) {
+        const oldId = droppedMap[zoneName];
+        const oldCard = document.createElement('div');
+        oldCard.innerHTML = originalCards[oldId];
+        const restoredCard = oldCard.firstElementChild;
+        document.getElementById('cases').appendChild(restoredCard);
+        bindCards();
+      }
+
+      // Remove from case list
+      dragged.remove();
+
+      // Track drop
+      droppedMap[zoneName] = dragged.id;
+
+      // Show in zone
+      const dropArea = document.getElementById('drop-' + zoneName);
+      dropArea.innerHTML = '<strong style="color:#c8a84b;font-size:9px;letter-spacing:1px;">' + dragged.querySelector('.case-num').innerText + '</strong><br>' + dragged.innerText.replace(dragged.querySelector('.case-num').innerText, '').trim();
+
+      // Reset zone state
+      zone.classList.remove('correct','wrong');
+      const icon = document.getElementById('icon-' + zoneName);
+      icon.textContent = '';
+
+      updateProgress();
+    });
+  });
+
+  function updateProgress() {
+    const filled = Object.keys(droppedMap).length;
+    document.getElementById('progressFill').style.width = (filled / 6 * 100) + '%';
+  }
+
+  function checkAnswers() {
+    let correct = 0;
+
+    zoneNames.forEach(name => {
+      const zone = document.getElementById('zone-' + name);
+      const icon = document.getElementById('icon-' + name);
+      const answer = zone.dataset.answer;
+      const dropped = droppedMap[name];
+
+      zone.classList.remove('correct','wrong');
+      icon.textContent = '';
+
+      if (dropped === answer) {
+        zone.classList.add('correct');
+        icon.textContent = '✔';
+        correct++;
+      } else if (dropped) {
+        zone.classList.add('wrong');
+        icon.textContent = '✘';
+      }
+    });
+
+    const panel = document.getElementById('scorePanel');
+    const title = document.getElementById('resultTitle');
+    const sub = document.getElementById('resultSub');
+    const tally = document.getElementById('scoreTally');
+    const hint = document.getElementById('hintText');
+    const codeReveal = document.getElementById('codeReveal');
+
+    panel.className = 'score-panel show';
+    tally.innerHTML = 'Correct matches: <strong>' + correct + ' / 6</strong>';
+    codeReveal.innerHTML = '';
+
+    if (correct === 6) {
+      panel.classList.add('perfect');
+      title.textContent = 'ACCESS GRANTED';
+      sub.textContent = 'All ethical violations correctly identified. The Board has recorded your competency.';
+      codeReveal.innerHTML = '<div style="margin:10px 0;font-size:11px;color:var(--muted);letter-spacing:2px;">PUZZLE 4 UNLOCK CODE</div><div class="final-code">2468</div>';
+      hint.textContent = 'Use this code to access Puzzle 4: Code of Ethics – Core Values.';
+    } else {
+      panel.classList.remove('perfect');
+      title.textContent = 'REVIEW REQUIRED';
+      sub.textContent = 'Some matches are incorrect. Incorrect zones are highlighted in red. Review and resubmit.';
+      hint.textContent = correct + ' of 6 cases correctly placed. Incorrect matches are shown in red — try again.';
+    }
+
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function resetGame() {
+    // Clear dropped map
+    Object.keys(droppedMap).forEach(k => delete droppedMap[k]);
+
+    // Restore all cards
+    const casesDiv = document.getElementById('cases');
+    casesDiv.innerHTML = Object.values(originalCards).join('');
+    bindCards();
+
+    // Reset zones
+    zoneNames.forEach(name => {
+      const zone = document.getElementById('zone-' + name);
+      zone.classList.remove('correct','wrong');
+      document.getElementById('drop-' + name).innerHTML = 'Drop case here…';
+      document.getElementById('icon-' + name).textContent = '';
+    });
+
+    // Reset UI
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('scorePanel').className = 'score-panel';
+  }
+</script>
+
+</body>
+</html>
