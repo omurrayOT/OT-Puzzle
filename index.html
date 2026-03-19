@@ -29,7 +29,6 @@
     overflow-x: hidden;
   }
 
-  /* Scanline overlay */
   body::before {
     content: '';
     position: fixed;
@@ -161,7 +160,6 @@
     background: var(--accent);
   }
 
-  /* Case Cards */
   .case-card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -201,7 +199,6 @@
     font-weight: 600;
   }
 
-  /* Drop Zones */
   .drop-zone {
     background: var(--panel);
     border: 1.5px dashed var(--border);
@@ -277,7 +274,6 @@
     80%{transform:translateX(4px)}
   }
 
-  /* Submit Button */
   .submit-area {
     display: flex;
     align-items: center;
@@ -322,7 +318,6 @@
     color: var(--text);
   }
 
-  /* Score panel */
   .score-panel {
     display: none;
     background: var(--panel);
@@ -391,7 +386,6 @@
     font-style: italic;
   }
 
-  /* Instructions tooltip */
   .instructions {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -406,7 +400,6 @@
 
   .instructions strong { color: var(--accent); }
 
-  /* Login Screen */
   #loginScreen {
     position: fixed;
     inset: 0;
@@ -537,7 +530,6 @@
     opacity: 0.6;
   }
 
-  /* Responsive */
   @media (max-width: 700px) {
     .board { grid-template-columns: 1fr; }
     header h1 { font-size: 16px; }
@@ -680,7 +672,6 @@
 </div>
 
 <script>
-  // Login gate
   function checkCode() {
     const val = document.getElementById('codeInput').value.trim().toUpperCase();
     if (val === 'AUDIT') {
@@ -705,18 +696,15 @@
     });
   });
 
-  // Map: zone name → which card ID is the correct answer
   const zoneNames = ['beneficence','nonmaleficence','autonomy','justice','fidelity','veracity'];
-  const droppedMap = {}; // zoneName → cardId
+  const droppedMap = {};
   let dragged = null;
 
-  // Original card HTML (for reset)
   const originalCards = {};
   document.querySelectorAll('.case-card').forEach(card => {
     originalCards[card.id] = card.outerHTML;
   });
 
-  // Drag events on cards
   function bindCards() {
     document.querySelectorAll('.case-card').forEach(card => {
       card.addEventListener('dragstart', e => {
@@ -730,7 +718,6 @@
   }
   bindCards();
 
-  // Drop zone events
   document.querySelectorAll('.drop-zone').forEach(zone => {
     zone.addEventListener('dragover', e => {
       e.preventDefault();
@@ -747,7 +734,6 @@
 
       const zoneName = zone.id.replace('zone-', '');
 
-      // If zone already has a card, return the old card to the case list
       if (droppedMap[zoneName]) {
         const oldId = droppedMap[zoneName];
         const oldCard = document.createElement('div');
@@ -757,17 +743,12 @@
         bindCards();
       }
 
-      // Remove from case list
       dragged.remove();
-
-      // Track drop
       droppedMap[zoneName] = dragged.id;
 
-      // Show in zone
       const dropArea = document.getElementById('drop-' + zoneName);
       dropArea.innerHTML = '<strong style="color:#c8a84b;font-size:9px;letter-spacing:1px;">' + dragged.querySelector('.case-num').innerText + '</strong><br>' + dragged.innerText.replace(dragged.querySelector('.case-num').innerText, '').trim();
 
-      // Reset zone state
       zone.classList.remove('correct','wrong');
       const icon = document.getElementById('icon-' + zoneName);
       icon.textContent = '';
@@ -818,8 +799,15 @@
       panel.classList.add('perfect');
       title.textContent = 'ACCESS GRANTED';
       sub.textContent = 'All ethical violations correctly identified. The Board has recorded your competency.';
-      codeReveal.innerHTML = '<div style="margin:10px 0;font-size:11px;color:var(--muted);letter-spacing:2px;">PUZZLE 4 UNLOCK CODE</div><div class="final-code">2468</div>';
-      hint.textContent = 'Use this code to access Puzzle 4: Code of Ethics – Core Values.';
+      codeReveal.innerHTML = `
+        <div style="margin:10px 0;font-size:11px;color:var(--muted);letter-spacing:2px;">YOUR CODE WORD</div>
+        <div class="final-code">CLEARANCE</div>
+        <div style="margin-top:16px;font-size:11px;color:var(--text);line-height:2;letter-spacing:1px;">
+          Write the word <strong style="color:var(--accent);">CLEARANCE</strong> on a piece of paper<br>
+          and hand it to the <strong style="color:var(--accent);">Game Facilitator</strong><br>
+          to receive your final puzzle.
+        </div>`;
+      hint.textContent = '';
     } else {
       panel.classList.remove('perfect');
       title.textContent = 'REVIEW REQUIRED';
@@ -831,15 +819,12 @@
   }
 
   function resetGame() {
-    // Clear dropped map
     Object.keys(droppedMap).forEach(k => delete droppedMap[k]);
 
-    // Restore all cards
     const casesDiv = document.getElementById('cases');
     casesDiv.innerHTML = Object.values(originalCards).join('');
     bindCards();
 
-    // Reset zones
     zoneNames.forEach(name => {
       const zone = document.getElementById('zone-' + name);
       zone.classList.remove('correct','wrong');
@@ -847,7 +832,6 @@
       document.getElementById('icon-' + name).textContent = '';
     });
 
-    // Reset UI
     document.getElementById('progressFill').style.width = '0%';
     document.getElementById('scorePanel').className = 'score-panel';
   }
